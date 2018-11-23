@@ -1,0 +1,197 @@
+TPCORREO  SUBENTRY BASES=(3)
+          WTO   'Trabajo Practico de Organizacion del Computa'
+          WTO 	'Bolsas de Correo (TP N12)'
+OTRACANT  WTOR 	'Cantidad de paquetes: ',N,,WAITECB
+          WAIT 	ECB=WAITECB
+		  BAL 	4,VALFORMN
+		  CLI	VALIDO,C'N'
+		  BE 	OTRACANT
+		  PACK  EMP,N
+		  BAL 	4,VALN
+		  CLI	VALIDO,C'N'
+		  BE 	OTRACANT
+		  PACK	EMP,N
+		  CVB	5,EMP
+		  BAL 	4,INITVEC
+OTRODEST  WTO 	'Indique el destino:'
+		  WTO 	'1-Mar del Plata'
+          WTO 	'2-Bariloche'
+		  WTO 	'3-Posadas'
+		  WTO 	'4-Salta'
+		  WTOR 	'5-Salir',DESTINO,,WAITECB
+		  WAIT 	ECB=WAITECB
+		  CLC 	DESTINO,=C'5'
+		  BE	FIN
+		  CLC	DESTINO,=C'5'
+		  BH	OTRODEST
+		  CLC 	DESTINO,=C'0'
+		  BE	OTRODEST
+OTROPESO  WTOR 	'Indique el peso del paquete: ',PESO,,WAITECB
+		  WAIT 	ECB=WAITECB
+		  CLC 	PESO,=C'8'
+		  BH 	OTROPESO
+		  CLC 	PESO,=C'0'
+		  BE 	OTROPESO
+		  BAL 	4,CARGARVEC
+		  BCT	5,OTRODEST
+          BAL 	4,INITVEC
+		  ZAP 	CANT,CANTM
+		  LR 	5,6
+		  BAL 	4,ORD
+		  LR 	5,6
+		  WTO 	'PAQUETES A MDP'
+		  BAL 	4,IMP2
+		  ZAP 	CANT,CANTB
+		  LR 	5,7
+		  BAL 	4,ORD
+		  LR 	5,7
+		  WTO 	'PAQUETES A BARILOCHE'
+		  BAL 	4,IMP2
+		  ZAP 	CANT,CANTP
+		  LR 	5,8
+		  BAL 	4,ORD
+		  LR 	5,8
+		  WTO 	'PAQUETES A POSADAS'
+		  BAL 	4,IMP2
+		  ZAP 	CANT,CANTS
+		  LR 	5,9
+		  BAL 	4,ORD
+		  LR 	5,9
+		  WTO 	'PAQUETES A SALTA'
+		  BAL 	4,IMP2
+FIN		  WTO   'Fin'
+	      SUBEXIT
+WAITECB   DC	F'0'
+BLOCKC    DC    H'5'
+          DC    H'0'
+PESO	  DS 	C
+N		  DS 	CL2
+CANT	  DS 	D
+CANT2     DS    F
+EMP		  DS	D
+EMPPESO	  DS 	P
+AUXP 	  DS 	P
+DESTINO   DS	C
+CANTM	  DC	PL2'0' ** CANT ELEMENTOS MDP
+CANTB	  DC	PL2'0' ** CANT ELEMENTOS BARILOCHE
+CANTP	  DC	PL2'0' ** CANT ELEMENTOS POSADAS
+CANTS	  DC	PL2'0' ** CANT ELEMENTOS SALTA
+CERO	  DC	CL2'00'
+VALIDO 	  DS 	C
+EMPVEC    DS    4PL20 
+*****INICIALIZAR VECTOR
+INITVEC   LA	6,EMPVEC **MDP
+		  LA 	7,EMPVEC+20 **BARILOCHE
+		  LA	8,EMPVEC+40 **POSADAS
+		  LA 	9,EMPVEC+60 **SALTA
+		  BR 	4
+*****VALIDAR FORMATO
+VALFORMN  MVI   VALIDO,C'N'
+		  MVZ 	CERO,N
+		  CLC   CERO,=C'00'
+		  BNER	4
+		  MVI	VALIDO,C'S'
+		  BR    4
+*****VALIDAR CANTIDAD
+VALN	  MVI	VALIDO,C'N'
+		  CP 	EMP,=P'1'
+		  BLR	4
+		  CP 	EMP,=P'20'
+		  BHR	4
+		  MVI   VALIDO,C'S'
+		  BR	4
+*****CARGAR VECTOR
+CARGARVEC PACK 	EMPPESO,PESO
+		  CLC 	DESTINO,=C'1'
+		  BE 	DESTMDP
+		  CLC 	DESTINO,=C'2'
+		  BE	DESTBARIL
+		  CLC 	DESTINO,=C'3'
+		  BE	DESTPOSAD
+		  MVC	0(1,9),EMPPESO **SALTA
+		  LA 	9,1(9)
+		  AP 	CANTS,=P'1'
+		  BR 	4
+DESTMDP   MVC	0(1,6),EMPPESO
+		  LA	6,1(6)
+		  AP 	CANTM,=P'1'
+		  BR 	4
+DESTBARIL MVC 	0(1,7),EMPPESO
+		  LA 	7,1(7)
+		  AP 	CANTB,=P'1'
+		  BR 	4
+DESTPOSAD MVC 	0(1,8),EMPPESO
+		  LA 	8,1(8)
+		  AP 	CANTP,=P'1'
+		  BR 	4
+*****ORDENAR VECTOR DESCENDENTE
+ORD 	  CP 	CANT,=P'0'
+		  BE 	OFIN
+		  CP 	CANT,=P'1'
+		  BE 	OFIN
+		  SP 	CANT,=P'1'
+		  CVB 	11,CANT
+		  LR 	12,5
+VUELTA	  LR 	10,11
+		  LR 	5,12
+COMPARA   CP    0(1,5),1(1,5)
+          BL    CAMBIO
+SIGO      LA    5,1(5)
+          BCT   10,COMPARA
+		  BCT   11,VUELTA
+		  AP    CANT,=P'1'
+OFIN      BR    4
+CAMBIO    ZAP   AUXP,0(1,5)
+          ZAP   0(1,5),1(1,5)
+          ZAP   1(1,5),AUXP
+          B     SIGO 
+*****IMPRIMIR POR PANTALLA VERSION 2
+IMP2 	  CP 	CANT,=P'0'
+		  BE 	VAC
+		  CP 	CANT,=P'1'
+		  BE 	IMP1
+		  B 	DIVID
+SEGUIR	  XR 	10,10
+    	  LR 	10,5 *PUNTERO AUX AL VECTOR A RECORRER
+		  CVB 	12,CANT *SEGUNDO CICLO CANT TOTAL DE ELEMENTOS
+		  ST 	11,CANT2 * CANT DIVIDIDA
+		  AR	10,12
+		  S 	10,=F'1'
+		  SP 	EMP,EMP
+CICLO1	  AP 	EMP,0(1,5)
+		  CP 	EMP,=P'8'
+		  BH 	FINP
+		  UNPK 	PESO,0(1,5)
+		  MVZ   PESO(1),=X'FF'
+		  WTO   MF=(E,BLOCKC)
+		  LA 	5,1(5)
+SIGUE	  C 	12,CANT2
+		  BE 	FINC2
+		  AP 	EMP,0(1,10)
+		  CP 	EMP,=P'8'
+		  BH 	FINP2
+		  UNPK 	PESO,0(1,10)
+		  MVZ   PESO(1),=X'FF'
+		  WTO   MF=(E,BLOCKC)
+		  S 	10,=F'1'
+		  S 	12,=F'1'
+		  B 	SIGUE
+FINP	  WTO 	'PAQUETE LLENO'
+		  SP 	EMP,EMP
+		  B 	CICLO1
+FINP2     WTO 	'PAQUETE LLENO'
+		  SP 	EMP,EMP
+		  B 	SIGUE
+FINC2	  BCT 	11,CICLO1
+		  BR 	4
+DIVID	  CVB 	11,CANT
+		  M 	10,=F'1'
+		  D 	10,=F'2' * EL COCIENTE ESTA EN EL 11 PRIMER CICLO
+		  B 	SEGUIR
+VAC 	  WTO 	'NO HAY PAQUETES PARA ENVIAR'
+		  BR 	4
+IMP1      UNPK 	PESO,0(1,5)
+		  MVZ   PESO(1),=X'FF'
+		  WTO   MF=(E,BLOCKC)
+		  BR    4
+		  END
